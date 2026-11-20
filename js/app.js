@@ -1,8 +1,8 @@
 'use strict';
 /* Router, header, global search, startup. */
 const App = (() => {
-  const VIEWS = { atlas: AtlasView, explore: ExploreView, compare: CompareView, refs: RefsView, notes: NotesView, data: DataView };
-  const NEEDS_DATA = new Set(['atlas', 'explore', 'compare']);
+  const VIEWS = { atlas: AtlasView, explore: ExploreView, refs: RefsView, notes: NotesView, data: DataView };
+  const NEEDS_DATA = new Set(['atlas', 'explore']);
   const tab = () => { const t = location.hash.slice(1); return VIEWS[t] ? t : 'atlas'; };
 
   function render() {
@@ -37,8 +37,7 @@ const App = (() => {
       <ol>
         <li><b>Overview</b>: which cell types change the most, and which pathways move where.</li>
         <li><b>Cell type</b>: volcano plot, gene table and pathways for one cell type and comparison.</li>
-        <li><b>Compare contrasts</b>: e.g. what aromatase knockout does in males vs. in females.</li>
-        <li><b>Published data</b>: overlap with gene lists from other hippocampus studies.</li>
+        <li><b>Published data</b>: published hippocampus datasets on their own, and overlap with gene lists from other studies.</li>
         <li>Click any gene or pathway to open a <b>detail panel</b> with its pattern across all cell types, its driver genes, database links and literature. Star (★) anything interesting; it is collected in the <b>Notebook</b>.</li>
       </ol>
       <p class="muted">No data is loaded in this browser yet. If someone sent you a bundle file, load it below. To try the tool first, load the simulated demo (made-up numbers, clearly labelled).</p>` }),

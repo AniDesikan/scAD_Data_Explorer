@@ -205,6 +205,10 @@ const Store = (() => {
     for (const t of Object.values(d.deg)) for (const f of ['lfc', 'p', 'padj']) t[f] = fix(t[f]);
     for (const t of Object.values(d.gsea)) for (const f of ['score', 'nes', 'p', 'padj', 'size']) t[f] = fix(t[f]);
     for (const r of Object.values(d.refs || {})) for (const f of ['lfc', 'p', 'padj', 'dir']) r[f] = fix(r[f]);
+    if (d.bulk) {
+      for (const t of Object.values(d.bulk.deg || {})) for (const f of ['lfc', 'p', 'padj']) t[f] = fix(t[f]);
+      for (const t of Object.values(d.bulk.gsea || {})) for (const f of ['nes', 'p', 'padj', 'size']) t[f] = fix(t[f]);
+    }
   }
   function loadBundleObj(obj) {
     if (!obj || obj.format !== 'hx-bundle' || !obj.data) throw new Error('Not an explorer bundle file.');

@@ -7,10 +7,12 @@ const RefsView = (() => {
     const d = Store.d(), s = Store.settings;
     root.append(U.h('div', { class: 'view-head' },
       U.h('h2', {}, 'Published data'),
-      U.h('p', { class: 'muted' }, 'Add gene lists or DEG tables from published hippocampus studies (aging, AD models, estradiol treatment, other sex-difference atlases…) and see which of your cell types they resemble.')));
+      U.h('p', { class: 'muted' }, 'Published hippocampus datasets, shown on their own. You can also add gene lists or DEG tables from other studies (aging, AD models, estradiol treatment, sex-difference atlases…) and see which of your cell types they resemble.')));
+    if (d.bulk) BulkView.render(root, d.bulk);
     uploadCard(root);
     const refs = Object.values(d.refs);
     if (!refs.length) {
+      if (d.bulk) return;
       root.append(U.card('No published datasets yet', 'Upload one above. A CSV with just a gene column works (a gene list); add log2FC and FDR columns to also compare direction.'));
       return;
     }
