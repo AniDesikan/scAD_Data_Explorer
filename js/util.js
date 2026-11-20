@@ -57,7 +57,7 @@ const U = (() => {
       degLfc: ['|log2FC| ≥', 0.05, 10, 'Minimum absolute log2 fold change (0 = no fold-change filter)'],
       gseaPadj: [`Pathways: ${q} <`, 0.01, 1, `${q === 'p' ? 'Unadjusted' : 'Adjusted'} p-value cutoff for calling a pathway enriched`],
     };
-    const DEF = { degPadj: 0.05, degLfc: 0.25, gseaPadj: 0.05 };
+    const DEF = { degPadj: 0.05, degLfc: 1, gseaPadj: 0.05 };
     const name = 'pmode-' + Math.random().toString(36).slice(2, 8);
     const radio = (val, label, tip) => h('label', { class: 'thr-radio', title: tip },
       h('input', { type: 'radio', name, value: val, checked: (s.pMode || 'padj') === val, onchange: () => Store.setSetting('pMode', val) }), label);
@@ -76,7 +76,7 @@ const U = (() => {
     }
     if (q === 'p') box.append(h('span', { class: 'thr-warn' }, 'Exploratory: not corrected for multiple testing'));
     if (keys.some(k => s[k] !== DEF[k]) || q === 'p')
-      box.append(h('button', { class: 'linkish', onclick: () => { keys.forEach(k => Store.setSetting(k, DEF[k])); Store.setSetting('pMode', 'padj'); } }, 'reset to FDR 0.05 / 0.25'));
+      box.append(h('button', { class: 'linkish', onclick: () => { keys.forEach(k => Store.setSetting(k, DEF[k])); Store.setSetting('pMode', 'padj'); } }, 'reset to FDR 0.05, |log2FC| 1'));
     return box;
   }
 

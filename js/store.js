@@ -28,8 +28,10 @@ const Store = (() => {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
   };
-  const DEFAULTS = { pMode: 'padj', degPadj: 0.05, degLfc: 0.25, gseaPadj: 0.05, refPadj: 0.05, autoAnnot: false, prettyNames: true };
+  const DEFAULTS = { pMode: 'padj', degPadj: 0.05, degLfc: 1, gseaPadj: 0.05, refPadj: 0.05, autoAnnot: false, prettyNames: true };
   const settings = Object.assign({}, DEFAULTS, LS.get('hx-settings') || {});
+  // v2: default |log2FC| went from 0.25 to 1; move anyone still on the old default (once)
+  if ((settings.sv || 1) < 2) { if (settings.degLfc === 0.25) settings.degLfc = 1; settings.sv = 2; }
   const notes = Object.assign({ items: {}, hypotheses: [] }, LS.get('hx-notes') || {});
   const ui = LS.get('hx-ui') || {};
   const listeners = {};
