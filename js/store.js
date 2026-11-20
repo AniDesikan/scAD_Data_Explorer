@@ -28,7 +28,7 @@ const Store = (() => {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
   };
-  const DEFAULTS = { degPadj: 0.05, degLfc: 0.25, gseaPadj: 0.05, refPadj: 0.05, autoAnnot: false, prettyNames: true };
+  const DEFAULTS = { pMode: 'padj', degPadj: 0.05, degLfc: 0.25, gseaPadj: 0.05, refPadj: 0.05, autoAnnot: false, prettyNames: true };
   const settings = Object.assign({}, DEFAULTS, LS.get('hx-settings') || {});
   const notes = Object.assign({ items: {}, hypotheses: [] }, LS.get('hx-notes') || {});
   const ui = LS.get('hx-ui') || {};
@@ -80,7 +80,11 @@ const Store = (() => {
     return m.get(String(g).toLowerCase());
   }
 
-  const degQ = (t, i) => (t.padj && Number.isFinite(t.padj[i]) ? t.padj[i] : t.p ? t.p[i] : NaN);
+  // pMode 'padj' (default): significance uses adjusted p (FDR); 'p': unadjusted p (exploratory). Tables without one fall back to the other.
+  const usingP = () => settings.pMode === 'p';
+  const qOf = (t, i) => (usingP() && t.p && Number.isFinite(t.p[i]) ? t.p[i] : t.padj && Number.isFinite(t.padj[i]) ? t.padj[i] : t.p ? t.p[i] : NaN);
+  const qName = () => (usingP() ? 'p' : 'FDR');
+  const degQ = qOf;
   const isSig = (t, i) => degQ(t, i) < settings.degPadj && Math.abs(t.lfc[i]) >= settings.degLfc;
   function degCounts(t) {
     let up = 0, down = 0;
@@ -92,7 +96,7 @@ const Store = (() => {
     for (let i = 0; i < t.genes.length; i++) if (isSig(t, i)) m.set(t.genes[i], Math.sign(t.lfc[i]));
     return m;
   }
-  const pathQ = (t, i) => (t.padj && Number.isFinite(t.padj[i]) ? t.padj[i] : t.p ? t.p[i] : NaN);
+  const pathQ = qOf;
   const pathSig = (t, i) => pathQ(t, i) < settings.gseaPadj;
 
   /** Map gene -> direction (1/-1/0) of a reference's significant genes. */
@@ -258,7 +262,7 @@ const Store = (() => {
   return {
     get settings() { return settings; }, get notes() { return notes; },
     d: () => data, on, emit, key, init, hasData, degTable, gseaTables, collections, cmpLabel, rowMap, lookup,
-    degQ, isSig, degCounts, sigGenes, pathQ, pathSig, refSig, index,
+    degQ, qName, usingP, isSig, degCounts, sigGenes, pathQ, pathSig, refSig, index,
     addTables, removeTable, addRef, removeRef, renameCelltype, renameComparison, move, setCompLabel, setTitle, clearAll, setSetting,
     getNote, isStarred, toggleStar, setStar, setNoteText, starred, saveNotes,
     uiGet, uiSave, exportBundle, importBundleFile, loadDemo,

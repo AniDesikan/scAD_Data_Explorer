@@ -23,7 +23,7 @@ const AtlasView = (() => {
     const s = Store.settings, cts = d.celltypes, cmps = d.comparisons;
     const div = U.h('div');
     root.append(U.card('How many genes change, and where?',
-      `Number of DEGs per cell type (FDR < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}; change them with the Significance boxes above). ↑ = higher in the first group named in the comparison. Click a square to open that cell type.`, div));
+      `Number of DEGs per cell type (${U.qn()} < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}; change them with the Significance boxes above). ↑ = higher in the first group named in the comparison. Click a square to open that cell type.`, div));
     const z = [], text = [], cd = [];
     for (const cmp of cmps) {
       const zr = [], tr = [], cr = [];
@@ -108,14 +108,14 @@ const AtlasView = (() => {
       U.h('label', {}, 'Columns', U.select([['ct', 'grouped by cell type'], ['cmp', 'grouped by comparison']], ui.colMode, v => { ui.colMode = v; redraw(); })),
       U.h('label', {}, U.h('input', { type: 'checkbox', checked: ui.mask, onchange: e => { ui.mask = e.target.checked; redraw(); } }), 'colour only significant'));
     root.append(U.card('Pathway landscape',
-      `Each row is a pathway, each column a cell type × comparison. Red = enriched among genes higher in the first group, blue = lower. Stars: * FDR<0.05, ** <0.01, *** <0.001 (· = passes your threshold of ${s.gseaPadj}). Grey = not tested. Click a square to see the genes behind it. Keywords accept regular expressions.`,
+      `Each row is a pathway, each column a cell type × comparison. Red = enriched among genes higher in the first group, blue = lower. Stars: * ${U.qn()}<0.05, ** <0.01, *** <0.001 (· = passes your threshold of ${s.gseaPadj}). Grey = not tested. Click a square to see the genes behind it. Keywords accept regular expressions.`,
       controls, info, plotDiv));
 
     function draw() {
       Plotly.purge(plotDiv); plotDiv.innerHTML = '';
       const { cols, rows } = buildMatrix(d, ui);
       if (!cols.length) { info.textContent = 'No pathway results for the selected comparisons/collection.'; return; }
-      if (!rows.length) { info.textContent = ui.q ? 'No pathway names match that keyword.' : `No pathway passes FDR < ${s.gseaPadj} in the selected columns. Try another collection, more comparisons, or a looser pathway FDR (Significance boxes above).`; return; }
+      if (!rows.length) { info.textContent = ui.q ? 'No pathway names match that keyword.' : `No pathway passes ${U.qn()} < ${s.gseaPadj} in the selected columns. Try another collection, more comparisons, or a looser pathway FDR (Significance boxes above).`; return; }
       info.textContent = `${rows.length} pathways shown${ui.q ? '' : ' (significant in at least one column)'}.`;
       const types = new Set(rows.flatMap(r => r.vals.filter(Boolean).map(v => v.type)));
       const z = rows.map(r => r.vals.map(v => (!v ? null : ui.mask && !(v.q < s.gseaPadj) ? 0 : v.score)));
@@ -123,7 +123,7 @@ const AtlasView = (() => {
       const cd = rows.map(r => r.vals.map((v, j) => {
         const c = cols[j];
         if (!v) return `<b>${U.esc(U.pretty(r.name))}</b><br>${U.esc(c.ct)} · ${U.esc(c.cmp)}<br>not tested`;
-        return `<b>${U.esc(U.trunc(U.pretty(r.name), 70))}</b><br>${U.esc(c.ct)} · ${U.esc(c.cmp)}<br>${v.type === 'NES' ? 'NES' : 'score'} ${U.fmt(v.score)} · FDR ${U.fmtP(v.q)}${Number.isFinite(v.size) ? ` · size ${v.size}` : ''}${v.nLE ? ` · ${v.nLE} driver genes` : ''}<br><i>click for genes</i>`;
+        return `<b>${U.esc(U.trunc(U.pretty(r.name), 70))}</b><br>${U.esc(c.ct)} · ${U.esc(c.cmp)}<br>${v.type === 'NES' ? 'NES' : 'score'} ${U.fmt(v.score)} · ${U.qn()} ${U.fmtP(v.q)}${Number.isFinite(v.size) ? ` · size ${v.size}` : ''}${v.nLE ? ` · ${v.nLE} driver genes` : ''}<br><i>click for genes</i>`;
       }));
       const zmax = Math.max(1, U.quantile(z.flat().filter(v => v != null).map(Math.abs), 0.98) || 1);
       const multi = new Set(cols.map(c => c.cmp)).size > 1;
@@ -201,7 +201,7 @@ const AtlasView = (() => {
       const v = e.by[e.best];
       left.append(U.h('div', { class: 'insight', onclick: () => Drawer.open({ type: 'path', id: e.name, ctx: { ct: e.ct, cmp: e.best } }) },
         U.h('b', {}, e.ct), ' — ', U.pretty(e.name), ' ',
-        U.h('span', { class: 'chip ' + (v.score > 0 ? 'up' : 'down') }, `${U.arrow(v.score)} ${e.best} (${U.fmt(v.score)}, FDR ${U.fmtP(v.q)})`),
+        U.h('span', { class: 'chip ' + (v.score > 0 ? 'up' : 'down') }, `${U.arrow(v.score)} ${e.best} (${U.fmt(v.score)}, ${U.qn()} ${U.fmtP(v.q)})`),
         U.h('span', { class: 'muted' }, ` not significant in ${e.ns.join(', ')}`)));
     });
     shared.slice(0, 15).forEach(o => {

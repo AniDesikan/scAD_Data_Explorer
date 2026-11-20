@@ -110,7 +110,7 @@ const Drawer = (() => {
     const sig = hits.filter(h => h.sig);
     const lede = U.h('p', { class: 'lede' });
     if (!hits.length) lede.append('This gene is not in any of your DEG tables (not detected or filtered out).');
-    else if (!sig.length) lede.append(`Tested in ${hits.length} cell type × comparison combinations; not significant in any (FDR < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}).`);
+    else if (!sig.length) lede.append(`Tested in ${hits.length} cell type × comparison combinations; not significant in any (${U.qn()} < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}).`);
     else {
       lede.append(`Significant in ${sig.length} of ${hits.length} tests: `);
       sig.sort((a, b2) => a.q - b2.q).slice(0, 6).forEach((h, k) => {
@@ -143,11 +143,11 @@ const Drawer = (() => {
         const here = d.celltypes[ri] === ctx.ct && d.comparisons[ci] === ctx.cmp;
         return {
           v: h.lfc, text: U.signed(h.lfc, 2) + U.stars(h.q, s.degPadj), cls: here ? 'cur' : '',
-          title: `${h.ct} · ${h.cmp}\nlog2FC ${U.fmt(h.lfc, 3)}, FDR ${U.fmtP(h.q)}${h.sig ? '' : ' (not significant at your thresholds)'}\nClick to open the volcano`,
+          title: `${h.ct} · ${h.cmp}\nlog2FC ${U.fmt(h.lfc, 3)}, ${U.qn()} ${U.fmtP(h.q)}${h.sig ? '' : ' (not significant at your thresholds)'}\nClick to open the volcano`,
           onclick: () => { close(); App.openExplore(h.ct, h.cmp, [g]); },
         };
       }, { max })),
-      U.h('div', { class: 'muted small-text' }, 'Stars = FDR (* <0.05, ** <0.01, *** <0.001). Outlined = the context you came from. Click a cell to see the gene on that volcano.'));
+      U.h('div', { class: 'muted small-text' }, `Stars = ${U.qn()} (* <0.05, ** <0.01, *** <0.001). Outlined = the context you came from. Click a cell to see the gene on that volcano.`));
     } else b.append(U.h('p', { class: 'muted' }, 'No data.'));
 
     // Pathways containing the gene
@@ -155,7 +155,7 @@ const Drawer = (() => {
     const g2p = Store.index().gene2paths.get(g) || [];
     const anyGenes = Object.values(d.gsea).some(t => t.genes);
     if (!anyGenes) b.append(U.h('p', { class: 'muted small-text' }, 'Your pathway tables have no leading-edge / gene column, so gene→pathway links are unavailable. Include the leadingEdge or core_enrichment column when exporting.'));
-    else if (!g2p.length) b.append(U.h('p', { class: 'muted small-text' }, `Not a driver gene of any pathway passing FDR < ${s.gseaPadj}.`));
+    else if (!g2p.length) b.append(U.h('p', { class: 'muted small-text' }, `Not a driver gene of any pathway passing ${U.qn()} < ${s.gseaPadj}.`));
     else {
       const byName = new Map();
       for (const { k, i } of g2p) {
@@ -166,7 +166,7 @@ const Drawer = (() => {
       const list = [...byName.entries()].sort((a, b2) => b2[1].length - a[1].length).slice(0, 25);
       b.append(U.h('div', {}, list.map(([name, ctxs]) => U.h('div', { class: 'insight', onclick: () => open({ type: 'path', id: name, ctx: { ct: ctxs[0].ct, cmp: ctxs[0].cmp } }) },
         U.h('div', {}, U.pretty(name)),
-        U.h('div', {}, ctxs.slice(0, 8).map(c => U.h('span', { class: 'chip ' + (c.score > 0 ? 'up' : 'down'), title: `FDR ${U.fmtP(c.q)}` }, `${U.arrow(c.score)} ${c.ct} · ${c.cmp}`)), ctxs.length > 8 ? ` +${ctxs.length - 8}` : '')))));
+        U.h('div', {}, ctxs.slice(0, 8).map(c => U.h('span', { class: 'chip ' + (c.score > 0 ? 'up' : 'down'), title: `${U.qn()} ${U.fmtP(c.q)}` }, `${U.arrow(c.score)} ${c.ct} · ${c.cmp}`)), ctxs.length > 8 ? ` +${ctxs.length - 8}` : '')))));
       if (byName.size > 25) b.append(U.h('div', { class: 'muted small-text' }, `…and ${byName.size - 25} more.`));
     }
 
@@ -284,7 +284,7 @@ const Drawer = (() => {
 
     const sigE = entries.filter(e => e.q < s.gseaPadj);
     const lede = U.h('p', { class: 'lede' });
-    if (!sigE.length) lede.append(`Not significant (FDR < ${s.gseaPadj}) in any cell type × comparison.`);
+    if (!sigE.length) lede.append(`Not significant (${U.qn()} < ${s.gseaPadj}) in any cell type × comparison.`);
     else {
       const up = sigE.filter(e => e.score > 0), dn = sigE.filter(e => e.score < 0);
       lede.append(`Significant in ${sigE.length} of ${E.size} tests. `);
@@ -329,7 +329,7 @@ const Drawer = (() => {
         const here = ctx && e.ct === ctx.ct && e.cmp === ctx.cmp;
         return {
           v: e.score, text: U.fmt(e.score, 1) + U.stars(e.q, s.gseaPadj), cls: here ? 'cur' : '',
-          title: `${e.ct} · ${e.cmp}\n${e.type === 'NES' ? 'NES' : 'score'} ${U.fmt(e.score)}, FDR ${U.fmtP(e.q)}\nClick to show its driver genes`,
+          title: `${e.ct} · ${e.cmp}\n${e.type === 'NES' ? 'NES' : 'score'} ${U.fmt(e.score)}, ${U.qn()} ${U.fmtP(e.q)}\nClick to show its driver genes`,
           onclick: () => open({ type: 'path', id: name, ctx: { ct: e.ct, cmp: e.cmp } }),
         };
       }, { max })), U.h('div', { class: 'muted small-text' }, 'Outlined = the context shown below. Click another cell to switch.'));
@@ -349,7 +349,7 @@ const Drawer = (() => {
         if (shown.length) U.plot(div, [{
           type: 'bar', orientation: 'h', y: shown.map((_, i) => i), x: shown.map(r => r.lfc),
           marker: { color: shown.map(r => (r.lfc > 0 ? '#b2182b' : '#2166ac')), opacity: shown.map(r => (r.sig ? 0.95 : 0.35)) },
-          customdata: shown.map(r => [r.g, U.fmtP(r.q)]), hovertemplate: '<b>%{customdata[0]}</b><br>log2FC %{x:.3f}<br>FDR %{customdata[1]}<extra></extra>',
+          customdata: shown.map(r => [r.g, U.fmtP(r.q)]), hovertemplate: `<b>%{customdata[0]}</b><br>log2FC %{x:.3f}<br>${U.qn()} %{customdata[1]}<extra></extra>`,
         }], {
           height: 50 + shown.length * 16, margin: { l: 90, r: 10, t: 6, b: 34 },
           yaxis: { tickvals: shown.map((_, i) => i), ticktext: shown.map(r => r.g), autorange: 'reversed', tickfont: { size: 10.5 } },
@@ -377,7 +377,7 @@ const Drawer = (() => {
           (ri, ci) => {
             const t = tabs[ci], i = t ? Store.rowMap(t).get(genes[ri]) : null;
             if (i == null) return null;
-            return { v: t.lfc[i], text: U.fmt(t.lfc[i], 1), cls: sets[ci].has(genes[ri]) ? 'le' : '', title: `${genes[ri]} in ${sigCtx[ci].ct} · ${sigCtx[ci].cmp}: log2FC ${U.fmt(t.lfc[i], 3)}, FDR ${U.fmtP(Store.degQ(t, i))}`, onclick: () => open({ type: 'gene', id: genes[ri], ctx: { ct: sigCtx[ci].ct, cmp: sigCtx[ci].cmp } }) };
+            return { v: t.lfc[i], text: U.fmt(t.lfc[i], 1), cls: sets[ci].has(genes[ri]) ? 'le' : '', title: `${genes[ri]} in ${sigCtx[ci].ct} · ${sigCtx[ci].cmp}: log2FC ${U.fmt(t.lfc[i], 3)}, ${U.qn()} ${U.fmtP(Store.degQ(t, i))}`, onclick: () => open({ type: 'gene', id: genes[ri], ctx: { ct: sigCtx[ci].ct, cmp: sigCtx[ci].cmp } }) };
           }, { max: 1 })));
       }
     }

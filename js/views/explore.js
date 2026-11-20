@@ -38,7 +38,7 @@ const ExploreView = (() => {
       U.h('label', {}, 'Highlight', overlaySelect(ui, ctx, rerender)),
       U.select([0, 5, 12, 25, 50].map(n => [n, `${n} labels`]), ui.labelN, v => { ui.labelN = +v; rerender(); }));
     grid.append(U.card(`Volcano: ${ui.ct} · ${ui.cmp}`,
-      t ? `${t.genes.length.toLocaleString()} genes tested. Red/blue = FDR < ${s.degPadj} and |log2FC| ≥ ${s.degLfc}. Positive log2FC = higher in the first group of “${ui.cmp}”${d.compLabels[ui.cmp] ? ` (${d.compLabels[ui.cmp]})` : ''}.` : 'No DEG table loaded for this cell type and comparison.',
+      t ? `${t.genes.length.toLocaleString()} genes tested. Red/blue = ${U.qn()} < ${s.degPadj} and |log2FC| ≥ ${s.degLfc}. Positive log2FC = higher in the first group of “${ui.cmp}”${d.compLabels[ui.cmp] ? ` (${d.compLabels[ui.cmp]})` : ''}.` : 'No DEG table loaded for this cell type and comparison.',
       t ? controls : null, volDiv));
     const side = U.h('div');
     grid.append(side);
@@ -62,7 +62,7 @@ const ExploreView = (() => {
     for (const t of Store.gseaTables(ctx.ct, ctx.cmp)) if (t.genes) t.names.forEach((n, i) => rows.push({ n, q: Store.pathQ(t, i), score: t.score[i] }));
     rows.sort((a, b) => a.q - b.q);
     const seen = new Set();
-    for (const r of rows) { if (seen.has(r.n) || seen.size >= 300) continue; seen.add(r.n); add(pg, 'path::' + r.n, `${U.arrow(r.score)} ${U.trunc(U.pretty(r.n), 60)} (FDR ${U.fmtP(r.q)})`); }
+    for (const r of rows) { if (seen.has(r.n) || seen.size >= 300) continue; seen.add(r.n); add(pg, 'path::' + r.n, `${U.arrow(r.score)} ${U.trunc(U.pretty(r.n), 60)} (${U.qn()} ${U.fmtP(r.q)})`); }
     if (seen.size) s.append(pg);
     const refs = Object.values(Store.d().refs);
     if (refs.length) { const rg = U.h('optgroup', { label: 'Published datasets' }); refs.forEach(r => add(rg, 'ref::' + r.id, r.name)); s.append(rg); }
@@ -92,7 +92,7 @@ const ExploreView = (() => {
   // ---------- volcano ----------
   function drawVolcano(div, t, ui, ctx) {
     const n = t.genes.length;
-    const useP = !(t.padj && t.padj.some(Number.isFinite));   // y = -log10 FDR; raw p only if the table has no adjusted p
+    const useP = Store.usingP() || !(t.padj && t.padj.some(Number.isFinite));   // y = -log10 FDR, or raw p in unadjusted mode / when no adjusted p
     const pv = useP ? t.p : t.padj;
     let minPos = 1;
     for (const v of pv) if (v > 0 && v < minPos) minPos = v;
@@ -106,7 +106,7 @@ const ExploreView = (() => {
       type: 'scattergl', mode: 'markers', name,
       x: ix.map(i => t.lfc[i]), y: ix.map(i => ys[i]),
       customdata: ix.map(i => [t.genes[i], U.fmtP(Store.degQ(t, i))]),
-      hovertemplate: '<b>%{customdata[0]}</b><br>log2FC %{x:.3f}<br>FDR %{customdata[1]}<extra></extra>',
+      hovertemplate: `<b>%{customdata[0]}</b><br>log2FC %{x:.3f}<br>${U.qn()} %{customdata[1]}<extra></extra>`,
       marker: Object.assign({ color, size, opacity: 0.85 }, extra),
     });
     const traces = [
@@ -128,7 +128,7 @@ const ExploreView = (() => {
     const lab = new Set();
     // Label the top genes by p-value even when none pass the FDR threshold (small-n pseudobulk designs).
     [...Array(n).keys()].sort((a, b) => ys[b] - ys[a]).slice(0, ui.labelN).forEach(i => lab.add(i));
-    if (!groups.up.length && !groups.down.length) U.toast(`No gene passes FDR < ${Store.settings.degPadj} here; labels show the top genes by p-value.`, 4000);
+    if (!groups.up.length && !groups.down.length) U.toast(`No gene passes ${U.qn()} < ${Store.settings.degPadj} here; labels show the top genes by p-value.`, 4000);
     ovIdx.filter(i => Store.isSig(t, i)).sort((a, b) => ys[b] - ys[a]).slice(0, 15).forEach(i => lab.add(i));
     findIdx.forEach(i => lab.add(i));
     const annotations = [...lab].map(i => ({
@@ -139,7 +139,7 @@ const ExploreView = (() => {
     const shapes = [-s.degLfc, s.degLfc].filter(x => x !== 0).map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { dash: 'dot', color: '#9ca3af', width: 1 } }));
     // horizontal guide at the FDR cutoff (on a raw-p axis, at the weakest significant gene instead)
     const sigY = groups.up.concat(groups.down).map(i => ys[i]);
-    const yCut = !useP ? (s.degPadj > 0 && s.degPadj < 1 ? -Math.log10(s.degPadj) : null) : sigY.length ? Math.min(...sigY) : null;
+    const yCut = s.degPadj > 0 && s.degPadj < 1 && (Store.usingP() || !useP) ? -Math.log10(s.degPadj) : sigY.length ? Math.min(...sigY) : null;
     if (yCut != null) shapes.push({ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: yCut, y1: yCut, line: { dash: 'dot', color: '#9ca3af', width: 1 } });
     U.plot(div, traces, {
       height: 540, margin: { l: 55, r: 10, t: 10, b: 40 }, hovermode: 'closest', dragmode: 'zoom',
@@ -276,8 +276,8 @@ const ExploreView = (() => {
     const plotDiv = U.h('div'), tblWrap = U.h('div', { class: 'scroll' });
     const q = U.h('input', { type: 'search', placeholder: 'search all pathways…', value: ui.pq, style: { width: '220px' } });
     const card = U.card(`Pathways: ${ctx.ct} · ${ctx.cmp}`,
-      sig.length ? `${sig.length} of ${rows.length} pathways pass FDR < ${s.gseaPadj}. Top 15 in each direction are shown. Click a bar for its driver genes.`
-        : `No pathway passes FDR < ${s.gseaPadj}; showing the strongest trends (faded) for orientation only.`,
+      sig.length ? `${sig.length} of ${rows.length} pathways pass ${U.qn()} < ${s.gseaPadj}. Top 15 in each direction are shown. Click a bar for its driver genes.`
+        : `No pathway passes ${U.qn()} < ${s.gseaPadj}; showing the strongest trends (faded) for orientation only.`,
       U.h('div', { class: 'controls' }, U.h('label', {}, 'Collection', U.select(colls, ui.coll, v => { ui.coll = v; Store.uiSave(); App.render(); }))),
       plotDiv, U.h('h4', {}, 'All pathways'), q, tblWrap);
     setTimeout(() => {
@@ -285,7 +285,7 @@ const ExploreView = (() => {
       U.plot(plotDiv, [{
         type: 'bar', orientation: 'h', x: bars.map(r => r.score), y: bars.map((_, i) => i),
         marker: { color: bars.map(r => (r.score > 0 ? '#b2182b' : '#2166ac')), opacity: bars.map(r => (r.q < s.gseaPadj ? 0.9 : 0.35)) },
-        customdata: bars.map(r => `<b>${U.esc(U.pretty(r.n))}</b><br>${r.type === 'NES' ? 'NES' : 'score'} ${U.fmt(r.score)} · FDR ${U.fmtP(r.q)}${r.nLE ? `<br>${r.nLE} driver genes` : ''}`),
+        customdata: bars.map(r => `<b>${U.esc(U.pretty(r.n))}</b><br>${r.type === 'NES' ? 'NES' : 'score'} ${U.fmt(r.score)} · ${U.qn()} ${U.fmtP(r.q)}${r.nLE ? `<br>${r.nLE} driver genes` : ''}`),
         hovertemplate: '%{customdata}<extra></extra>',
       }], {
         height: 60 + bars.length * 20, margin: { l: 360, r: 20, t: 10, b: 40 },
@@ -298,7 +298,7 @@ const ExploreView = (() => {
       const list = rows.filter(r => !ql || r.n.toLowerCase().includes(ql) || U.pretty(r.n).toLowerCase().includes(ql)).sort((a, b) => a.q - b.q).slice(0, 200);
       tblWrap.innerHTML = '';
       tblWrap.append(U.h('table', { class: 'tbl' },
-        U.h('tr', {}, U.h('th', {}, 'Pathway'), U.h('th', { class: 'num' }, 'score'), U.h('th', { class: 'num' }, 'FDR'), U.h('th', { class: 'num' }, 'size'), U.h('th', { class: 'num' }, 'drivers')),
+        U.h('tr', {}, U.h('th', {}, 'Pathway'), U.h('th', { class: 'num' }, 'score'), U.h('th', { class: 'num' }, U.qn()), U.h('th', { class: 'num' }, 'size'), U.h('th', { class: 'num' }, 'drivers')),
         list.map(r => U.h('tr', { class: 'click', onclick: () => Drawer.open({ type: 'path', id: r.n, ctx }) },
           U.h('td', {}, U.pretty(r.n)), U.h('td', { class: 'num', style: { color: r.score > 0 ? 'var(--up)' : 'var(--down)' } }, U.fmt(r.score)),
           U.h('td', { class: 'num' }, U.fmtP(r.q)), U.h('td', { class: 'num' }, Number.isFinite(r.size) ? r.size : ''), U.h('td', { class: 'num' }, r.nLE || '')))));

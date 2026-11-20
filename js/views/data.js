@@ -169,9 +169,10 @@ const DataView = (() => {
     root.append(U.card('4. Settings', 'Thresholds apply everywhere, immediately. They are personal (stored per browser) and not part of the bundle.',
       U.h('div', { class: 'kv' },
         U.h('span', {}, 'Page title'), title,
-        U.h('span', {}, 'DEG: FDR below'), numIn('degPadj', 0.01),
+        U.h('span', {}, 'Significance uses'), U.select([['padj', 'adjusted p (FDR)'], ['p', 'unadjusted p (exploratory)']], s.pMode || 'padj', v => Store.setSetting('pMode', v)),
+        U.h('span', {}, `DEG: ${U.qn()} below`), numIn('degPadj', 0.01),
         U.h('span', {}, 'DEG: |log2FC| at least'), numIn('degLfc', 0.05),
-        U.h('span', {}, 'Pathways: FDR below'), numIn('gseaPadj', 0.01),
+        U.h('span', {}, `Pathways: ${U.qn()} below`), numIn('gseaPadj', 0.01),
         U.h('span', {}, 'Published: FDR below'), numIn('refPadj', 0.01),
         U.h('span', {}, 'Readable pathway names'), U.h('label', {}, chk('prettyNames'), U.h('span', { class: 'small-text muted' }, 'GOBP_SYNAPTIC_SIGNALING → “synaptic signaling (GOBP)”')),
         U.h('span', {}, 'Auto-load annotations'), U.h('label', {}, chk('autoAnnot'), U.h('span', { class: 'small-text muted' }, 'fetch gene summaries / literature / GO definitions as soon as a detail panel opens')))));

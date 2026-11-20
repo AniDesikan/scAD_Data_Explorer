@@ -81,11 +81,11 @@ const NotesView = (() => {
         L.push(`### ${it.starred ? '★ ' : ''}${type === 'gene' ? it.id : U.pretty(it.id)}`);
         if (type === 'gene') {
           const hits = [];
-          for (const t of Object.values(d.deg)) { const i = Store.rowMap(t).get(it.id); if (i != null && Store.isSig(t, i)) hits.push(`${t.celltype} ${t.comparison} ${U.signed(t.lfc[i])} (FDR ${U.fmtP(Store.degQ(t, i))})`); }
+          for (const t of Object.values(d.deg)) { const i = Store.rowMap(t).get(it.id); if (i != null && Store.isSig(t, i)) hits.push(`${t.celltype} ${t.comparison} ${U.signed(t.lfc[i])} (${U.qn()} ${U.fmtP(Store.degQ(t, i))})`); }
           if (hits.length) L.push('', `Significant in: ${hits.join('; ')}`);
         } else {
           const hits = [];
-          for (const t of Object.values(d.gsea)) t.names.forEach((n, i) => { if (n === it.id && Store.pathSig(t, i)) hits.push(`${t.celltype} ${t.comparison} ${U.fmt(t.score[i])} (FDR ${U.fmtP(Store.pathQ(t, i))})`); });
+          for (const t of Object.values(d.gsea)) t.names.forEach((n, i) => { if (n === it.id && Store.pathSig(t, i)) hits.push(`${t.celltype} ${t.comparison} ${U.fmt(t.score[i])} (${U.qn()} ${U.fmtP(Store.pathQ(t, i))})`); });
           if (hits.length) L.push('', `Significant in: ${hits.join('; ')}`);
         }
         if (it.note) L.push('', it.note);

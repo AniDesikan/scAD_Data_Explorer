@@ -12,7 +12,8 @@ const BulkView = (() => {
     if (!colls.includes(ui.coll)) ui.coll = colls[0];
     const rerender = () => { Store.uiSave(); App.render(); };
     const lab = c => (B.compLabels && B.compLabels[c]) || c;
-    const S = Store.settings, sigI = (t, i) => t.padj[i] < S.degPadj && Math.abs(t.lfc[i]) >= S.degLfc;
+    const S = Store.settings, useP = Store.usingP(), qv = (t, i) => (useP ? t.p[i] : t.padj[i]), Q = U.qn();
+    const sigI = (t, i) => qv(t, i) < S.degPadj && Math.abs(t.lfc[i]) >= S.degLfc;
 
     const body = U.h('div');
     const card = U.card(B.title, null,
@@ -34,8 +35,8 @@ const BulkView = (() => {
     if (t) {
       const n = t.genes.length, idx = [...Array(n).keys()].filter(i => Number.isFinite(t.lfc[i]) && Number.isFinite(t.p[i]));
       const sig = idx.filter(i => sigI(t, i)), rest = idx.filter(i => !sigI(t, i));
-      let minPos = 1; for (const i of idx) if (t.padj[i] > 0 && t.padj[i] < minPos) minPos = t.padj[i];
-      const yv = i => -Math.log10(t.padj[i] > 0 ? t.padj[i] : minPos / 10);
+      let minPos = 1; for (const i of idx) if (qv(t, i) > 0 && qv(t, i) < minPos) minPos = qv(t, i);
+      const yv = i => -Math.log10(qv(t, i) > 0 ? qv(t, i) : minPos / 10);
       const top = idx.slice().sort((a, b) => t.p[a] - t.p[b]).slice(0, 12);
       const tr = (ix, name, color, size) => ({
         type: 'scattergl', mode: 'markers', name, x: ix.map(i => t.lfc[i]), y: ix.map(i => yv(i)), customdata: ix.map(i => t.genes[i]),
@@ -48,13 +49,13 @@ const BulkView = (() => {
       ], {
         height: 420, margin: { l: 55, r: 10, t: 30, b: 45 }, hovermode: 'closest', legend: { orientation: 'h', y: -0.18, font: { size: 11 } },
         xaxis: { title: { text: 'log2 fold change' }, zeroline: true, zerolinecolor: '#9ca3af', gridcolor: '#f1f2f4' },
-        yaxis: { title: { text: '−log10 FDR (adjusted p)' }, gridcolor: '#f1f2f4', rangemode: 'tozero' },
+        yaxis: { title: { text: useP ? '−log10 p-value' : '−log10 FDR (adjusted p)' }, gridcolor: '#f1f2f4', rangemode: 'tozero' },
         shapes: [-S.degLfc, S.degLfc].filter(x => x !== 0).map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { dash: 'dot', color: '#9ca3af', width: 1 } }))
           .concat(S.degPadj > 0 && S.degPadj < 1 ? [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: -Math.log10(S.degPadj), y1: -Math.log10(S.degPadj), line: { dash: 'dot', color: '#9ca3af', width: 1 } }] : []),
         annotations: [
           ...top.map(i => ({ x: t.lfc[i], y: yv(i), text: t.genes[i], showarrow: false, yshift: 9, font: { size: 10, color: '#374151' } })),
           { xref: 'paper', yref: 'paper', x: 0, y: 1.08, xanchor: 'left', showarrow: false, font: { size: 11, color: '#6b7280' },
-            text: `${n.toLocaleString()} genes · ${sig.length} pass FDR < ${S.degPadj}${S.degLfc ? ` and |log2FC| ≥ ${S.degLfc}` : ''}${sig.length ? '' : ' · labels = top genes by p'}` },
+            text: `${n.toLocaleString()} genes · ${sig.length} pass ${Q} < ${S.degPadj}${S.degLfc ? ` and |log2FC| ≥ ${S.degLfc}` : ''}${sig.length ? '' : ' · labels = top genes by p'}` },
         ],
       }, pt => { ui.gene = pt.customdata; Store.uiSave(); drawGene(); });
 
@@ -63,7 +64,7 @@ const BulkView = (() => {
         idx.slice().sort((a, b) => t.p[a] - t.p[b]).slice(0, 100).map(i => U.h('tr', { class: 'click', onclick: () => { ui.gene = t.genes[i]; Store.uiSave(); drawGene(); } },
           U.h('td', {}, U.h('b', {}, t.genes[i])),
           U.h('td', { class: 'num', style: { color: t.lfc[i] > 0 ? 'var(--up)' : 'var(--down)' } }, U.signed(t.lfc[i])),
-          U.h('td', { class: 'num' }, U.fmtP(t.p[i])), U.h('td', { class: 'num', style: sigI(t, i) ? { fontWeight: 600 } : {} }, U.fmtP(t.padj[i]))))));
+          U.h('td', { class: 'num', style: useP && sigI(t, i) ? { fontWeight: 600 } : {} }, U.fmtP(t.p[i])), U.h('td', { class: 'num', style: !useP && sigI(t, i) ? { fontWeight: 600 } : {} }, U.fmtP(t.padj[i]))))));
     } else vol.append(U.h('p', { class: 'muted' }, 'No table for this age and comparison.'));
 
     // one gene across every age x comparison
@@ -92,20 +93,20 @@ const BulkView = (() => {
     body.append(U.h('h4', { style: { marginTop: '18px' } }, 'Pathways (GSEA): every age and comparison'),
       U.h('div', { class: 'controls' },
         U.h('label', {}, 'Gene sets', U.select(colls, ui.coll, v => { ui.coll = v; rerender(); })),
-        U.h('span', { class: 'muted small-text' }, `Colour = NES (red: higher in the first group). Stars: * FDR<0.05, ** <0.01, *** <0.001 (· = passes your cutoff only). Shows pathways with FDR < ${S.gseaPadj} somewhere (top 40 for large collections).`)),
+        U.h('span', { class: 'muted small-text' }, `Colour = NES (red: higher in the first group). Stars: * ${Q}<0.05, ** <0.01, *** <0.001 (· = passes your cutoff only). Shows pathways with ${Q} < ${S.gseaPadj} somewhere (top 40 for large collections).`)),
       pw);
     const cols = [];
     for (const ctx of B.contexts) for (const c of B.comparisons) { const g = B.gsea[key(ctx, c, ui.coll)]; if (g) cols.push({ ctx, c, g, map: new Map(g.names.map((n, i) => [n, i])) }); }
     const best = new Map();
-    for (const col of cols) col.g.names.forEach((n, i) => { const q = col.g.padj[i]; if (q < (best.get(n) ?? Infinity)) best.set(n, q); });
+    for (const col of cols) col.g.names.forEach((n, i) => { const q = col.g[useP ? 'p' : 'padj'][i]; if (q < (best.get(n) ?? Infinity)) best.set(n, q); });
     const paths = [...best.entries()].filter(([, q]) => q < S.gseaPadj).sort((a, b) => a[1] - b[1]).slice(0, 40).map(([n]) => n);
-    if (!paths.length) { pw.append(U.h('p', { class: 'muted' }, `No pathway reaches FDR < ${S.gseaPadj} in this collection.`)); return; }
+    if (!paths.length) { pw.append(U.h('p', { class: 'muted' }, `No pathway reaches ${Q} < ${S.gseaPadj} in this collection.`)); return; }
     const val = (col, n, f) => { const i = col.map.get(n); return i == null ? null : col.g[f][i]; };
     U.plot(pw, [{
       type: 'heatmap', x: cols.map((_, j) => j), y: paths.map((_, i) => i), xgap: 2, ygap: 2,
       z: paths.map(n => cols.map(col => val(col, n, 'nes'))),
-      text: paths.map(n => cols.map(col => U.stars(val(col, n, 'padj'), S.gseaPadj))), texttemplate: '%{text}',
-      customdata: paths.map(n => cols.map(col => `<b>${U.esc(U.pretty(n))}</b><br>${U.esc(col.ctx)} · ${U.esc(lab(col.c))}<br>NES ${U.fmt(val(col, n, 'nes'))}, FDR ${U.fmtP(val(col, n, 'padj'))}`)),
+      text: paths.map(n => cols.map(col => U.stars(val(col, n, useP ? 'p' : 'padj'), S.gseaPadj))), texttemplate: '%{text}',
+      customdata: paths.map(n => cols.map(col => `<b>${U.esc(U.pretty(n))}</b><br>${U.esc(col.ctx)} · ${U.esc(lab(col.c))}<br>NES ${U.fmt(val(col, n, 'nes'))}, FDR ${U.fmtP(val(col, n, 'padj'))}, p ${U.fmtP(val(col, n, 'p'))}`)),
       hovertemplate: '%{customdata}<extra></extra>', colorscale: U.DIVERGING, zmid: 0, zmin: -3, zmax: 3,
       colorbar: { title: { text: 'NES', side: 'right' }, thickness: 12 },
     }], {
