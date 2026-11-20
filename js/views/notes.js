@@ -1,5 +1,5 @@
 'use strict';
-/* Notebook: starred genes/pathways with notes, and free-text hypotheses. Exportable to share back. */
+/* Notebook: starred genes/pathways with notes. Exportable to share back. */
 const NotesView = (() => {
   function render(root) {
     const N = Store.notes;
@@ -11,25 +11,6 @@ const NotesView = (() => {
       U.h('button', { class: 'primary', onclick: exportMarkdown }, 'Download as text (Markdown)'),
       U.h('button', { onclick: () => U.download('explorer_notes.json', JSON.stringify(N, null, 1), 'application/json') }, 'Export notes (JSON)'),
       importButton())));
-
-    // Hypotheses
-    const hypWrap = U.h('div');
-    const title = U.h('input', { type: 'text', placeholder: 'Hypothesis, e.g. “Aromatase loss drives a microglial interferon response in females only”', style: { width: '100%' } });
-    const text = U.h('textarea', { placeholder: 'Evidence, genes, pathways, next experiments…', style: { width: '100%', minHeight: '70px', marginTop: '6px' } });
-    root.append(U.card('Hypotheses', null, title, text,
-      U.h('div', { style: { marginTop: '6px' } }, U.h('button', { class: 'primary', onclick: () => {
-        if (!title.value.trim()) return U.toast('Give it a title first');
-        N.hypotheses.unshift({ id: Date.now(), title: title.value.trim(), text: text.value, ts: Date.now() });
-        Store.saveNotes(); App.render();
-      } }, 'Add hypothesis')), hypWrap));
-    N.hypotheses.forEach((h, k) => {
-      const ta = U.h('textarea', { class: 'note', value: h.text });
-      ta.addEventListener('input', U.debounce(() => { h.text = ta.value; Store.saveNotes(true); }, 400));
-      hypWrap.append(U.h('div', { class: 'noteitem', style: { marginTop: '10px' } },
-        U.h('div', { class: 'btnrow' }, U.h('b', {}, h.title), U.h('span', { class: 'muted small-text' }, new Date(h.ts).toLocaleDateString()),
-          U.h('button', { class: 'small danger', style: { marginLeft: 'auto' }, onclick: () => { if (confirm('Delete this hypothesis?')) { N.hypotheses.splice(k, 1); Store.saveNotes(); App.render(); } } }, 'Delete')),
-        ta));
-    });
 
     const items = Object.values(N.items).sort((a, b) => b.ts - a.ts);
     for (const [type, label] of [['gene', 'Genes'], ['path', 'Pathways']]) {
@@ -61,7 +42,6 @@ const NotesView = (() => {
           if (!cur) { N.items[k] = v; n++; }
           else { cur.starred = cur.starred || v.starred; if (v.note && !cur.note.includes(v.note)) cur.note = cur.note ? `${cur.note}\n---\n${v.note}` : v.note; n++; }
         }
-        for (const h of obj.hypotheses || []) if (!N.hypotheses.some(x => x.id === h.id)) { N.hypotheses.push(h); n++; }
         Store.saveNotes(); App.render(); U.toast(`Merged ${n} notes`);
       } catch (e) { U.toast('Could not read that notes file: ' + e.message, 5000); }
       input.value = '';
@@ -72,7 +52,6 @@ const NotesView = (() => {
   function exportMarkdown() {
     const N = Store.notes, d = Store.d();
     const L = [`# ${d.meta.title || 'Hippocampus scRNA-seq'}: notebook`, '', `Exported ${new Date().toLocaleString()}`, ''];
-    if (N.hypotheses.length) { L.push('## Hypotheses', ''); N.hypotheses.forEach(h => L.push(`### ${h.title}`, '', h.text || '', '')); }
     for (const [type, label] of [['gene', 'Genes'], ['path', 'Pathways']]) {
       const list = Object.values(N.items).filter(x => x.type === type);
       if (!list.length) continue;

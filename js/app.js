@@ -33,7 +33,7 @@ const App = (() => {
 
   function welcome() {
     return U.h('div', { class: 'welcome' }, U.card('Welcome', null, U.h('div', { html: `
-      <p>This explorer helps you browse differential expression and pathway results from single-cell RNA-seq of the mouse hippocampus, cell type by cell type, and turn interesting patterns into hypotheses.</p>
+      <p>This explorer helps you browse differential expression and pathway results from single-cell RNA-seq of the mouse hippocampus, cell type by cell type.</p>
       <ol>
         <li><b>Overview</b>: which cell types change the most, and which pathways move where.</li>
         <li><b>Cell type</b>: volcano plot, gene table and pathways for one cell type and comparison.</li>
@@ -59,7 +59,7 @@ const App = (() => {
     updateNotesCount();
   }
   function updateNotesCount() {
-    const n = Object.values(Store.notes.items).filter(x => x.starred || x.note).length + Store.notes.hypotheses.length;
+    const n = Object.values(Store.notes.items).filter(x => x.starred || x.note).length;
     U.$('#notes-count').textContent = n ? n : '';
   }
 

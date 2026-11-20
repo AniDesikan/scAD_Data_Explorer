@@ -80,7 +80,7 @@ const Drawer = (() => {
   }
   function noteBox(type, id, ctx) {
     const n = Store.getNote(type, id);
-    const ta = U.h('textarea', { class: 'note', placeholder: 'Your notes / hypothesis about this… (saved automatically, shown in Notebook)', value: n ? n.note : '' });
+    const ta = U.h('textarea', { class: 'note', placeholder: 'Your notes about this… (saved automatically, shown in Notebook)', value: n ? n.note : '' });
     ta.addEventListener('input', U.debounce(() => Store.setNoteText(type, id, ta.value, ctx), 400));
     return ta;
   }
