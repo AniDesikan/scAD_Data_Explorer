@@ -13,7 +13,8 @@ const ExploreView = (() => {
 
     root.append(U.h('div', { class: 'view-head' },
       U.h('h2', {}, 'Cell type explorer'),
-      U.h('p', { class: 'muted' }, 'Pick a cell type and a comparison. Click any point, row or bar for details. To select a group of genes, choose the box or lasso tool (top-right of the volcano) and drag.')));
+      U.h('p', { class: 'muted' }, 'Pick a cell type and a comparison. Click any point, row or bar for details. To select a group of genes, choose the box or lasso tool (top-right of the volcano) and drag.'),
+      U.thresholdBar()));
 
     const pills = U.h('div', { class: 'pills' }, d.celltypes.map(ct => {
       const t = Store.degTable(ct, ui.cmp), c = t ? Store.degCounts(t) : null;

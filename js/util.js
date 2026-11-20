@@ -46,6 +46,30 @@ const U = (() => {
   const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
   const arrow = x => (x > 0 ? '↑' : x < 0 ? '↓' : '·');
 
+  /** Compact, always-visible significance thresholds. They are the same settings as on Data & settings and apply everywhere. */
+  function thresholdBar(keys = ['degPadj', 'degLfc', 'gseaPadj']) {
+    const s = Store.settings;
+    const META = {
+      degPadj: ['Genes: FDR <', 0.01, 1, 'Adjusted p-value cutoff for calling a gene differentially expressed'],
+      degLfc: ['|log2FC| ≥', 0.05, 10, 'Minimum absolute log2 fold change (0 = no fold-change filter)'],
+      gseaPadj: ['Pathways: FDR <', 0.01, 1, 'Adjusted p-value cutoff for calling a pathway enriched'],
+    };
+    const DEF = { degPadj: 0.05, degLfc: 0.25, gseaPadj: 0.05 };
+    const box = h('div', { class: 'thresholds' }, h('span', { class: 'thr-title' }, 'Significance'));
+    for (const k of keys) {
+      const [label, step, max, tip] = META[k];
+      const i = h('input', { type: 'number', step, min: 0, max, value: s[k], title: tip });
+      i.addEventListener('change', () => {
+        const v = parseFloat(i.value);
+        if (Number.isFinite(v) && v >= 0 && v <= max) Store.setSetting(k, v); else i.value = s[k];
+      });
+      box.append(h('label', { title: tip }, label, i));
+    }
+    if (keys.some(k => s[k] !== DEF[k]))
+      box.append(h('button', { class: 'linkish', onclick: () => keys.forEach(k => Store.setSetting(k, DEF[k])) }, 'reset to 0.05 / 0.25'));
+    return box;
+  }
+
   /** Readable pathway names: GOBP_SYNAPTIC_SIGNALING -> "synaptic signaling (GOBP)". */
   function pretty(name) {
     if (!name) return '';
@@ -237,7 +261,7 @@ const U = (() => {
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
   return {
-    h, $, select, card, esc, fmt, fmtP, signed, stars, trunc, arrow, pretty, plainPath, splitGenes,
+    h, $, select, card, thresholdBar, esc, fmt, fmtP, signed, stars, trunc, arrow, pretty, plainPath, splitGenes,
     pnorm2, bh, phyper, pearson, clusterOrder, quantile,
     divColor, textOn, DIVERGING, download, gzipText, blobText, toCSV, copy, toast, plot, heatTable, debounce,
   };

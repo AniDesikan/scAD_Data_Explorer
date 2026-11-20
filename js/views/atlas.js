@@ -12,7 +12,8 @@ const AtlasView = (() => {
 
     root.append(U.h('div', { class: 'view-head' },
       U.h('h2', {}, 'Overview'),
-      U.h('p', { class: 'muted' }, 'Start here: where are the biggest changes? Click any square to drill into it. Gene and pathway details open in a side panel.')));
+      U.h('p', { class: 'muted' }, 'Start here: where are the biggest changes? Click any square to drill into it. Gene and pathway details open in a side panel.'),
+      U.thresholdBar()));
     degCard(root, d);
     pathCard(root, d, ui, colls);
     leadsCard(root, d, ui);
@@ -22,7 +23,7 @@ const AtlasView = (() => {
     const s = Store.settings, cts = d.celltypes, cmps = d.comparisons;
     const div = U.h('div');
     root.append(U.card('How many genes change, and where?',
-      `Number of DEGs per cell type (FDR < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}; change thresholds under Data & settings). ↑ = higher in the first group named in the comparison. Click a square to open that cell type.`, div));
+      `Number of DEGs per cell type (FDR < ${s.degPadj}, |log2FC| ≥ ${s.degLfc}; change them with the Significance boxes above). ↑ = higher in the first group named in the comparison. Click a square to open that cell type.`, div));
     const z = [], text = [], cd = [];
     for (const cmp of cmps) {
       const zr = [], tr = [], cr = [];
@@ -114,7 +115,7 @@ const AtlasView = (() => {
       Plotly.purge(plotDiv); plotDiv.innerHTML = '';
       const { cols, rows } = buildMatrix(d, ui);
       if (!cols.length) { info.textContent = 'No pathway results for the selected comparisons/collection.'; return; }
-      if (!rows.length) { info.textContent = ui.q ? 'No pathway names match that keyword.' : `No pathway passes FDR < ${s.gseaPadj} in the selected columns. Try another collection, more comparisons, or a looser GSEA threshold (Data & settings).`; return; }
+      if (!rows.length) { info.textContent = ui.q ? 'No pathway names match that keyword.' : `No pathway passes FDR < ${s.gseaPadj} in the selected columns. Try another collection, more comparisons, or a looser pathway FDR (Significance boxes above).`; return; }
       info.textContent = `${rows.length} pathways shown${ui.q ? '' : ' (significant in at least one column)'}.`;
       const types = new Set(rows.flatMap(r => r.vals.filter(Boolean).map(v => v.type)));
       const z = rows.map(r => r.vals.map(v => (!v ? null : ui.mask && !(v.q < s.gseaPadj) ? 0 : v.score)));
