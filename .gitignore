@@ -1,0 +1,6 @@
+# never commit unencrypted data or passphrases
+*.json.gz
+data/bundle.json
+*PASSPHRASE*
+*.csv.gz
+.DS_Store

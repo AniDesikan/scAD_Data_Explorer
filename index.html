@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hippocampus scRNA Explorer</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- Libraries only. Your data never leaves the browser. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span id="app-title">Hippocampus scRNA-seq Explorer</span><span id="demo-badge" class="badge warn hidden">SIMULATED DEMO DATA</span></div>
+  <nav id="tabs">
+    <a href="#atlas" data-tab="atlas">Overview</a>
+    <a href="#explore" data-tab="explore">Cell type</a>
+    <a href="#compare" data-tab="compare">Compare contrasts</a>
+    <a href="#refs" data-tab="refs">Published data</a>
+    <a href="#notes" data-tab="notes">Notebook <span id="notes-count" class="count"></span></a>
+    <a href="#data" data-tab="data">Data &amp; settings</a>
+  </nav>
+  <div class="search">
+    <input id="global-search" type="search" placeholder="Search a gene or pathway…" autocomplete="off" spellcheck="false">
+    <div id="search-results" class="dropdown hidden"></div>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<aside id="drawer" class="drawer hidden" aria-label="Details">
+  <div class="drawer-head">
+    <button id="drawer-back" class="small" title="Back">←</button>
+    <div id="drawer-crumbs"></div>
+    <button id="drawer-close" class="small" title="Close (Esc)">✕</button>
+  </div>
+  <div id="drawer-body"></div>
+</aside>
+
+<div id="toast"></div>
+
+<script src="js/util.js"></script>
+<script src="js/lock.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ingest.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/drawer.js"></script>
+<script src="js/views/atlas.js"></script>
+<script src="js/views/explore.js"></script>
+<script src="js/views/compare.js"></script>
+<script src="js/views/refs.js"></script>
+<script src="js/views/notes.js"></script>
+<script src="js/views/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

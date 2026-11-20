@@ -1,0 +1,4 @@
+celltype,comparison,collection,pathway,ID,NES,pval,padj,size,genes
+Microglia,M_KO_vs_M_Ctrl,GO:BP,GOBP_EXAMPLE_PATHWAY_ONE,GO:0000001,2.1,1.0e-05,0.002,85,GeneA;GeneD;GeneE
+Microglia,F_KO_vs_F_Ctrl,GO:BP,GOBP_EXAMPLE_PATHWAY_ONE,GO:0000001,0.9,0.41,0.77,85,GeneD
+Astrocytes,M_KO_vs_M_Ctrl,GO:BP,GOBP_EXAMPLE_PATHWAY_TWO,GO:0000002,-1.8,2.0e-04,0.013,40,GeneC;GeneF
