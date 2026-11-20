@@ -92,8 +92,8 @@ const ExploreView = (() => {
   // ---------- volcano ----------
   function drawVolcano(div, t, ui, ctx) {
     const n = t.genes.length;
-    const useP = !!t.p && t.p.some(Number.isFinite);
-    const pv = useP ? t.p : t.padj || t.p;
+    const useP = !(t.padj && t.padj.some(Number.isFinite));   // y = -log10 FDR; raw p only if the table has no adjusted p
+    const pv = useP ? t.p : t.padj;
     let minPos = 1;
     for (const v of pv) if (v > 0 && v < minPos) minPos = v;
     const ys = new Array(n), groups = { ns: [], up: [], down: [] };
@@ -137,12 +137,14 @@ const ExploreView = (() => {
     }));
     const s = Store.settings;
     const shapes = [-s.degLfc, s.degLfc].filter(x => x !== 0).map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { dash: 'dot', color: '#9ca3af', width: 1 } }));
+    // horizontal guide at the FDR cutoff (on a raw-p axis, at the weakest significant gene instead)
     const sigY = groups.up.concat(groups.down).map(i => ys[i]);
-    if (sigY.length) { const y = Math.min(...sigY); shapes.push({ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: y, y1: y, line: { dash: 'dot', color: '#9ca3af', width: 1 } }); }
+    const yCut = !useP ? (s.degPadj > 0 && s.degPadj < 1 ? -Math.log10(s.degPadj) : null) : sigY.length ? Math.min(...sigY) : null;
+    if (yCut != null) shapes.push({ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: yCut, y1: yCut, line: { dash: 'dot', color: '#9ca3af', width: 1 } });
     U.plot(div, traces, {
       height: 540, margin: { l: 55, r: 10, t: 10, b: 40 }, hovermode: 'closest', dragmode: 'zoom',
       xaxis: { title: { text: 'log2 fold change' }, zeroline: true, zerolinecolor: '#d1d5db', gridcolor: '#f1f2f4' },
-      yaxis: { title: { text: useP ? '−log10 p-value' : '−log10 FDR' }, gridcolor: '#f1f2f4' },
+      yaxis: { title: { text: useP ? '−log10 p-value' : '−log10 FDR (adjusted p)' }, gridcolor: '#f1f2f4' },
       legend: { orientation: 'h', y: 1.08, x: 0, font: { size: 11 } }, annotations, shapes,
     }, pt => Drawer.open({ type: 'gene', id: pt.customdata[0], ctx }), ev => {
       selection = ev && ev.points ? [...new Set(ev.points.map(p => p.customdata[0]))] : [];

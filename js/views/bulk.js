@@ -1,6 +1,6 @@
 'use strict';
 /* A bulk RNA-seq dataset shown on its own (Published data tab), kept apart from the scRNA results.
- * Data lives in Store.d().bulk = { title, description, citation, caveats, contexts, comparisons, compLabels, deg, gsea }. */
+ * Data lives in Store.d().bulk = { title, description, citation, contexts, comparisons, compLabels, deg, gsea }. */
 const BulkView = (() => {
   const key = (a, b, c) => [a, b, c].filter(x => x != null).join('||');
 
@@ -17,8 +17,6 @@ const BulkView = (() => {
     const body = U.h('div');
     const card = U.card(B.title, null,
       U.h('div', { class: 'muted small-text', style: { marginBottom: '8px' } }, [B.description, B.citation].filter(Boolean).join(' — ')),
-      // (older builds' caveat mentioned the former nominal-p colouring of the volcano; drop that clause)
-      B.caveats ? U.h('div', { class: 'callout' }, B.caveats.replace(/, so the volcano also marks genes with nominal p < 0\.01 \(exploratory\)/, '')) : null,
       U.thresholdBar(), U.h('div', { style: { height: '10px' } }),
       body);
     root.append(card);
@@ -36,10 +34,12 @@ const BulkView = (() => {
     if (t) {
       const n = t.genes.length, idx = [...Array(n).keys()].filter(i => Number.isFinite(t.lfc[i]) && Number.isFinite(t.p[i]));
       const sig = idx.filter(i => sigI(t, i)), rest = idx.filter(i => !sigI(t, i));
+      let minPos = 1; for (const i of idx) if (t.padj[i] > 0 && t.padj[i] < minPos) minPos = t.padj[i];
+      const yv = i => -Math.log10(t.padj[i] > 0 ? t.padj[i] : minPos / 10);
       const top = idx.slice().sort((a, b) => t.p[a] - t.p[b]).slice(0, 12);
       const tr = (ix, name, color, size) => ({
-        type: 'scattergl', mode: 'markers', name, x: ix.map(i => t.lfc[i]), y: ix.map(i => -Math.log10(t.p[i])), customdata: ix.map(i => t.genes[i]),
-        text: ix.map(i => `FDR ${U.fmtP(t.padj[i])}`), hovertemplate: '<b>%{customdata}</b><br>log2FC %{x:.2f}<br>p %{y:.2f} (−log10)<br>%{text}<extra></extra>',
+        type: 'scattergl', mode: 'markers', name, x: ix.map(i => t.lfc[i]), y: ix.map(i => yv(i)), customdata: ix.map(i => t.genes[i]),
+        text: ix.map(i => `FDR ${U.fmtP(t.padj[i])}, p ${U.fmtP(t.p[i])}`), hovertemplate: '<b>%{customdata}</b><br>log2FC %{x:.2f}<br>%{text}<extra></extra>',
         marker: { color, size, opacity: 0.85 },
       });
       U.plot(vol, [
@@ -48,10 +48,11 @@ const BulkView = (() => {
       ], {
         height: 420, margin: { l: 55, r: 10, t: 30, b: 45 }, hovermode: 'closest', legend: { orientation: 'h', y: -0.18, font: { size: 11 } },
         xaxis: { title: { text: 'log2 fold change' }, zeroline: true, zerolinecolor: '#9ca3af', gridcolor: '#f1f2f4' },
-        yaxis: { title: { text: '−log10 p' }, gridcolor: '#f1f2f4' },
-        shapes: [-S.degLfc, S.degLfc].filter(x => x !== 0).map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { dash: 'dot', color: '#9ca3af', width: 1 } })),
+        yaxis: { title: { text: '−log10 FDR (adjusted p)' }, gridcolor: '#f1f2f4', rangemode: 'tozero' },
+        shapes: [-S.degLfc, S.degLfc].filter(x => x !== 0).map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { dash: 'dot', color: '#9ca3af', width: 1 } }))
+          .concat(S.degPadj > 0 && S.degPadj < 1 ? [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: -Math.log10(S.degPadj), y1: -Math.log10(S.degPadj), line: { dash: 'dot', color: '#9ca3af', width: 1 } }] : []),
         annotations: [
-          ...top.map(i => ({ x: t.lfc[i], y: -Math.log10(t.p[i]), text: t.genes[i], showarrow: false, yshift: 9, font: { size: 10, color: '#374151' } })),
+          ...top.map(i => ({ x: t.lfc[i], y: yv(i), text: t.genes[i], showarrow: false, yshift: 9, font: { size: 10, color: '#374151' } })),
           { xref: 'paper', yref: 'paper', x: 0, y: 1.08, xanchor: 'left', showarrow: false, font: { size: 11, color: '#6b7280' },
             text: `${n.toLocaleString()} genes · ${sig.length} pass FDR < ${S.degPadj}${S.degLfc ? ` and |log2FC| ≥ ${S.degLfc}` : ''}${sig.length ? '' : ' · labels = top genes by p'}` },
         ],
