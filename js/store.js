@@ -173,6 +173,14 @@ const Store = (() => {
   function setCompLabel(c, label) { data.compLabels[c] = label; persist(); emit('data'); }
   function setTitle(t) { data.meta.title = t; persist(); emit('data'); }
   function clearAll() { data = empty(); changed(); }
+  // Forget the unlocked data in this browser (notes and settings are kept) and reload, so the passphrase is asked again.
+  let encryptedSite = false;
+  async function lock() {
+    clearTimeout(saveTimer); data = empty();
+    try { await IDB.set('data', data); } catch (e) { console.warn('lock: could not clear saved data', e); }
+    try { localStorage.removeItem('hx-server-bundle'); } catch { /* storage unavailable */ }
+    location.reload();
+  }
 
   function setSetting(k, v) {
     settings[k] = v; LS.set('hx-settings', settings); resetCaches(); emit('settings');
@@ -251,6 +259,7 @@ const Store = (() => {
         const r = await fetch('data/bundle.enc.json', { cache: 'no-cache' });
         if (r.ok) {
           const enc = await r.json();
+          if (enc.format === 'hx-encrypted') encryptedSite = true;
           if (enc.format === 'hx-encrypted' && (!hasData() || LS.get('hx-server-bundle') !== enc.exportedAt)) {
             const obj = await Lock.ask(enc);
             if (obj) { loadBundleObj(obj); LS.set('hx-server-bundle', enc.exportedAt); }
@@ -265,7 +274,7 @@ const Store = (() => {
     get settings() { return settings; }, get notes() { return notes; },
     d: () => data, on, emit, key, init, hasData, degTable, gseaTables, collections, cmpLabel, rowMap, lookup,
     degQ, qName, usingP, isSig, degCounts, sigGenes, pathQ, pathSig, refSig, index,
-    addTables, removeTable, addRef, removeRef, renameCelltype, renameComparison, move, setCompLabel, setTitle, clearAll, setSetting,
+    addTables, removeTable, addRef, removeRef, renameCelltype, renameComparison, move, setCompLabel, setTitle, clearAll, lock, isEncryptedSite: () => encryptedSite, setSetting,
     getNote, isStarred, toggleStar, setStar, setNoteText, starred, saveNotes,
     uiGet, uiSave, exportBundle, importBundleFile, loadDemo,
   };

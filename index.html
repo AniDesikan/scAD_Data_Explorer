@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hippocampus scRNA Explorer</title>
-<link rel="stylesheet" href="css/style.css?v=dd455a52e6">
+<link rel="stylesheet" href="css/style.css?v=f851790d1f">
 <!-- Libraries only. Your data never leaves the browser. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.0/plotly.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<meta name="hx-build" content="e3f8240d77">
-<script>(function(){try{var b='e3f8240d77';fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===b||sessionStorage.getItem('hx-reload-'+v))return;sessionStorage.setItem('hx-reload-'+v,'1');var u=new URL(location.href);u.searchParams.set('b',v);location.replace(u.toString());}).catch(function(){});}catch(e){}})();</script>
+<meta name="hx-build" content="8379bf0309">
+<script>(function(){try{var b='8379bf0309';fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===b||sessionStorage.getItem('hx-reload-'+v))return;sessionStorage.setItem('hx-reload-'+v,'1');var u=new URL(location.href);u.searchParams.set('b',v);location.replace(u.toString());}).catch(function(){});}catch(e){}})();</script>
 </head>
 <body>
 <header class="topbar">
@@ -26,6 +26,7 @@
     <input id="global-search" type="search" placeholder="Search a gene or pathway…" autocomplete="off" spellcheck="false">
     <div id="search-results" class="dropdown hidden"></div>
   </div>
+  <button id="lock-btn" class="lock-btn hidden" title="Forget the unlocked data in this browser and ask for the passphrase again (your notes are kept)">🔒</button>
 </header>
 
 <main id="view"></main>
@@ -43,7 +44,7 @@
 
 <script src="js/util.js?v=4bf939596d"></script>
 <script src="js/lock.js?v=db8fe4a254"></script>
-<script src="js/store.js?v=8e5f17c706"></script>
+<script src="js/store.js?v=3131a6acd4"></script>
 <script src="js/ingest.js?v=c993f1b25e"></script>
 <script src="js/demo.js?v=0a4b88c912"></script>
 <script src="js/drawer.js?v=5443f5ef12"></script>
@@ -53,6 +54,6 @@
 <script src="js/views/refs.js?v=e3bfc4b979"></script>
 <script src="js/views/notes.js?v=7dd333fba5"></script>
 <script src="js/views/data.js?v=943dad1660"></script>
-<script src="js/app.js?v=c9ded24cbe"></script>
+<script src="js/app.js?v=829bf234ed"></script>
 </body>
 </html>
