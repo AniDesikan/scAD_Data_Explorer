@@ -29,8 +29,7 @@ const BulkView = (() => {
       U.h('label', {}, 'Comparison', U.select(B.comparisons.map(c => [c, lab(c)]), ui.cmp, v => { ui.cmp = v; rerender(); }))));
     const grid = U.h('div', { class: 'grid2b' }), vol = U.h('div'), tbl = U.h('div', { class: 'scroll', style: { maxHeight: '420px' } });
     grid.append(vol, tbl); body.append(grid);
-    const geneBox = U.h('div', { style: { marginTop: '10px' } });
-    body.append(geneBox);
+    body.append(U.h('div', { class: 'muted small-text', style: { marginTop: '6px' } }, 'Click a gene (plot or table) to open its detail panel.'));
 
     if (t) {
       const n = t.genes.length, idx = [...Array(n).keys()].filter(i => Number.isFinite(t.lfc[i]) && Number.isFinite(t.p[i]));
@@ -57,36 +56,16 @@ const BulkView = (() => {
           { xref: 'paper', yref: 'paper', x: 0, y: 1.08, xanchor: 'left', showarrow: false, font: { size: 11, color: '#6b7280' },
             text: `${n.toLocaleString()} genes · ${sig.length} pass ${Q} < ${S.degPadj}${S.degLfc ? ` and |log2FC| ≥ ${S.degLfc}` : ''}${sig.length ? '' : ' · labels = top genes by p'}` },
         ],
-      }, pt => { ui.gene = pt.customdata; Store.uiSave(); drawGene(); });
+      }, pt => openGene(pt.customdata));
 
       tbl.append(U.h('table', { class: 'tbl' },
         U.h('tr', {}, U.h('th', {}, 'Gene'), U.h('th', { class: 'num' }, 'log2FC'), U.h('th', { class: 'num' }, 'p'), U.h('th', { class: 'num' }, 'FDR')),
-        idx.slice().sort((a, b) => t.p[a] - t.p[b]).slice(0, 100).map(i => U.h('tr', { class: 'click', onclick: () => { ui.gene = t.genes[i]; Store.uiSave(); drawGene(); } },
+        idx.slice().sort((a, b) => t.p[a] - t.p[b]).slice(0, 100).map(i => U.h('tr', { class: 'click', onclick: () => openGene(t.genes[i]) },
           U.h('td', {}, U.h('b', {}, t.genes[i])),
           U.h('td', { class: 'num', style: { color: t.lfc[i] > 0 ? 'var(--up)' : 'var(--down)' } }, U.signed(t.lfc[i])),
           U.h('td', { class: 'num', style: useP && sigI(t, i) ? { fontWeight: 600 } : {} }, U.fmtP(t.p[i])), U.h('td', { class: 'num', style: !useP && sigI(t, i) ? { fontWeight: 600 } : {} }, U.fmtP(t.padj[i]))))));
     } else vol.append(U.h('p', { class: 'muted' }, 'No table for this age and comparison.'));
 
-    // one gene across every age x comparison
-    function drawGene() {
-      geneBox.innerHTML = '';
-      const g = ui.gene;
-      if (!g) { geneBox.append(U.h('div', { class: 'muted small-text' }, 'Click a gene (plot or table) to see it in every age and comparison.')); return; }
-      const cell = (ctx, c) => {
-        const tt = B.deg[key(ctx, c)], i = tt ? tt.genes.indexOf(g) : -1;
-        if (i < 0) return U.h('td', { class: 'num muted' }, '–');
-        return U.h('td', { class: 'num', style: { color: tt.lfc[i] > 0 ? 'var(--up)' : 'var(--down)' }, title: `p ${U.fmtP(tt.p[i])}, FDR ${U.fmtP(tt.padj[i])}` },
-          `${U.signed(tt.lfc[i])} `, U.h('span', { class: 'muted' }, sigI(tt, i) ? '(significant)' : ''));
-      };
-      geneBox.append(U.h('h4', {}, `${g}: log2FC in the bulk data`),
-        U.h('div', { class: 'hscroll' }, U.h('table', { class: 'tbl' },
-          U.h('tr', {}, U.h('th', {}, ''), B.comparisons.map(c => U.h('th', { class: 'num' }, lab(c)))),
-          B.contexts.map(ctx => U.h('tr', {}, U.h('td', {}, U.h('b', {}, ctx)), B.comparisons.map(c => cell(ctx, c)))))),
-        U.h('div', { class: 'links' },
-          U.h('a', { href: `https://www.ncbi.nlm.nih.gov/gene/?term=${encodeURIComponent(g)}[sym]+AND+mouse[orgn]`, target: '_blank', rel: 'noopener' }, 'NCBI Gene'),
-          U.h('a', { href: `https://www.informatics.jax.org/searchtool/Search.do?query=${encodeURIComponent(g)}`, target: '_blank', rel: 'noopener' }, 'MGI')));
-    }
-    drawGene();
 
     // ---- pathways: every age x comparison ----
     const pw = U.h('div');
@@ -116,5 +95,26 @@ const BulkView = (() => {
     });
   }
 
-  return { render };
+  const openGene = g => Drawer.open({ type: 'gene', id: g, from: 'bulk' });
+
+  /** log2FC of one gene in every age x comparison of the bulk dataset (used by the gene detail panel). */
+  function geneTable(B, g) {
+    const S = Store.settings, useP = Store.usingP();
+    const lab = c => (B.compLabels && B.compLabels[c]) || c;
+    const cell = (ctx, c) => {
+      const tt = B.deg[key(ctx, c)], i = tt ? tt.genes.indexOf(g) : -1;
+      if (i < 0) return U.h('td', { class: 'num muted' }, '–');
+      const q = useP ? tt.p[i] : tt.padj[i], sig = q < S.degPadj && Math.abs(tt.lfc[i]) >= S.degLfc;
+      return U.h('td', { class: 'num', style: { color: tt.lfc[i] > 0 ? 'var(--up)' : 'var(--down)', fontWeight: sig ? 600 : 400 }, title: `p ${U.fmtP(tt.p[i])}, FDR ${U.fmtP(tt.padj[i])}` },
+        U.signed(tt.lfc[i]) + (sig ? ' *' : ''));
+    };
+    if (!Object.values(B.deg).some(t => t.genes.includes(g))) return U.h('p', { class: 'muted small-text' }, 'Not tested in the bulk data (not detected or filtered out).');
+    return U.h('div', {},
+      U.h('div', { class: 'hscroll' }, U.h('table', { class: 'tbl' },
+        U.h('tr', {}, U.h('th', {}, ''), B.comparisons.map(c => U.h('th', { class: 'num' }, lab(c)))),
+        B.contexts.map(ctx => U.h('tr', {}, U.h('td', {}, U.h('b', {}, ctx)), B.comparisons.map(c => cell(ctx, c)))))),
+      U.h('div', { class: 'muted small-text' }, `log2FC; * = passes ${U.qn()} < ${S.degPadj} and |log2FC| ≥ ${S.degLfc}. Hover a value for p and FDR.`));
+  }
+
+  return { render, geneTable };
 })();

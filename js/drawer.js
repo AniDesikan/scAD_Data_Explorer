@@ -105,6 +105,8 @@ const Drawer = (() => {
     ctx = ctx || it.ctx || { ct: d.celltypes[0], cmp: d.comparisons[0] };
 
     b.append(U.h('h2', {}, g, starBtn('gene', g, ctx), U.h('span', { class: 'muted', style: { fontSize: '13px', fontWeight: 400 } }, 'gene')));
+    const bulkSection = () => [U.h('h4', {}, d.bulk.title || 'Bulk RNA-seq'), BulkView.geneTable(d.bulk, g)];
+    if (d.bulk && it.from === 'bulk') b.append(...bulkSection());
 
     // Plain-language summary
     const sig = hits.filter(h => h.sig);
@@ -172,8 +174,9 @@ const Drawer = (() => {
 
     // Published datasets
     const refs = Object.values(d.refs);
-    b.append(U.h('h4', {}, 'In published datasets'));
-    if (!refs.length) b.append(U.h('p', { class: 'muted small-text' }, 'No published datasets loaded yet (see the Published data tab).'));
+    if (d.bulk && it.from !== 'bulk') b.append(...bulkSection());
+    if (refs.length || !d.bulk) b.append(U.h('h4', {}, 'In published datasets'));
+    if (!refs.length) { if (!d.bulk) b.append(U.h('p', { class: 'muted small-text' }, 'No published datasets loaded yet (see the Published data tab).')); }
     else {
       b.append(U.h('table', { class: 'tbl' },
         U.h('tr', {}, U.h('th', {}, 'Dataset'), U.h('th', { class: 'num' }, 'log2FC / dir'), U.h('th', { class: 'num' }, 'FDR'), U.h('th', {}, '')),
