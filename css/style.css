@@ -160,5 +160,5 @@ button.linkish { background: none; border: none; padding: 0; color: var(--muted)
 .thresholds .thr-radio input { width: auto; margin: 0 3px 0 0; }
 .thresholds .thr-warn { font-size: 12px; color: #b45309; }
 
-.lock-btn { padding: 4px 8px; border-radius: 7px; border: 1px solid #374151; background: #1f2937; color: #e5e7eb; font-size: 13px; cursor: pointer; }
+.lock-btn { padding: 5px 10px; border-radius: 7px; border: 1px solid #6b7280; background: #374151; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .lock-btn:hover { background: #374151; color: #fff; }

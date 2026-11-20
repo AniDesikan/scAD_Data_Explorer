@@ -117,7 +117,7 @@ const App = (() => {
     updateHeader();
     if (Store.isEncryptedSite()) {
       const b = U.$('#lock-btn'); b.classList.remove('hidden');
-      b.onclick = () => { b.disabled = true; b.textContent = '…'; Store.lock(); };
+      b.onclick = () => { b.disabled = true; b.textContent = 'Locking…'; Store.lock(); };
     }
     render();
   }
